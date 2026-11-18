@@ -31,6 +31,8 @@ export function WorkLog({
   filter,
   onClearFilter,
   onClear,
+  examples,
+  onPickExample,
 }: {
   logs: LogEntry[];
   usage: Usage;
@@ -40,15 +42,24 @@ export function WorkLog({
   filter: AgentId | null;
   onClearFilter: () => void;
   onClear: () => void;
+  /** 로그가 비어 있을 때 보여줄 예시 지시 */
+  examples?: string[];
+  onPickExample: (text: string) => void;
 }) {
   const listRef = useRef<HTMLOListElement>(null);
+  /** 사용자가 맨 아래를 보고 있는지. 위로 올려 읽는 중이면 새 로그가 와도 끌어내리지 않습니다. */
+  const atBottomRef = useRef(true);
   const shown = filter ? logs.filter((l) => l.from === filter || l.to === filter) : logs;
 
-  // 새 로그가 오면 맨 아래로 스크롤
+  // 필터를 바꾸면 새 목록의 맨 아래부터 보여줍니다. (아래 스크롤 효과보다 먼저 실행되도록 앞에 둠)
+  useEffect(() => {
+    atBottomRef.current = true;
+  }, [filter]);
+
   useEffect(() => {
     const el = listRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [shown.length]);
+    if (el && atBottomRef.current) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [shown.length, filter]);
 
   return (
     <section aria-labelledby="worklog-heading" className="flex min-h-0 flex-1 flex-col rounded-xl border border-line bg-panel">
@@ -79,7 +90,13 @@ export function WorkLog({
           로그 지우기
         </button>
       </header>
-      <ol ref={listRef} aria-label="업무 기록" className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-3 text-sm">
+      <ol
+        ref={listRef}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+        }}
+        aria-label="업무 기록" className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-3 text-sm">
         {shown.length === 0 && (
           <li className="py-8 text-center leading-relaxed text-muted">
             {filter ? (
@@ -89,6 +106,23 @@ export function WorkLog({
                 지시를 내리면 팀원들의 업무 기록이 여기에 쌓입니다.
                 <br />
                 사무실의 책상을 누르면 직원별 담당 업무를 볼 수 있습니다.
+                {examples && examples.length > 0 && (
+                  <span className="mx-auto mt-6 block max-w-[440px] text-left">
+                    <span className="block text-xs font-bold text-ink-2">이렇게 지시해 보세요</span>
+                    <span className="mt-2 flex flex-col gap-1.5">
+                      {examples.map((ex) => (
+                        <button
+                          key={ex}
+                          type="button"
+                          onClick={() => onPickExample(ex)}
+                          className="rounded-lg border border-line bg-white px-3 py-2 text-left text-[13px] leading-snug text-ink-2 hover:border-line-strong hover:text-ink"
+                        >
+                          {ex}
+                        </button>
+                      ))}
+                    </span>
+                  </span>
+                )}
               </>
             )}
           </li>
@@ -108,7 +142,7 @@ export function WorkLog({
               {log.kind && (
                 <span
                   className={`mr-1 inline-block rounded px-1 py-px align-[1px] text-[11px] font-bold ${
-                    log.kind === "scan" ? "bg-[#e3eaf4] text-[#2d4f7c]" : "bg-accent-soft text-[#8a4119]"
+                    log.kind === "scan" ? "bg-scan-soft text-scan" : "bg-accent-soft text-accent-strong"
                   }`}
                 >
                   {log.kind === "scan" ? "스캔 승인" : "보고서 결재"}

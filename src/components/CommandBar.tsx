@@ -4,8 +4,12 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { IconClose, IconPaperclip, IconSend, IconStop } from "./icons";
 import { btn } from "./ui";
 
+/** 서버와 같은 지시 길이 제한 (src/app/api/missions/route.ts) */
+export const MAX_COMMAND_LENGTH = 1000;
+
 /** 팀장 지시 입력줄. 왼쪽에 실행 모드, 오른쪽에 실행(또는 중지) 버튼. "/" 키로 바로 입력할 수 있습니다. */
 export function CommandBar({
+  draft,
   attachment,
   modeSwitch,
   live,
@@ -15,6 +19,8 @@ export function CommandBar({
   onStop,
 }: {
   modeSwitch: ReactNode;
+  /** 바깥에서 입력란을 채울 때 (예시 지시 클릭). key가 바뀔 때마다 한 번 반영합니다. */
+  draft?: { text: string; key: number };
   /** 실제 AI 모드인지 (버튼 문구에 구독 차감을 표시) */
   live: boolean;
   disabled: boolean;
@@ -31,9 +37,20 @@ export function CommandBar({
   };
 }) {
   const [text, setText] = useState("");
+  const [seenDraft, setSeenDraft] = useState(draft?.key);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const trimmed = text.trim();
+  const nearLimit = text.length > MAX_COMMAND_LENGTH * 0.8;
+
+  // 새 예시 지시가 오면 입력란에 넣습니다 (렌더 중 상태 조정 — effect보다 깜빡임이 없음)
+  if (draft && draft.key !== seenDraft) {
+    setSeenDraft(draft.key);
+    setText(draft.text);
+  }
+  useEffect(() => {
+    if (draft) inputRef.current?.focus();
+  }, [draft]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -48,7 +65,7 @@ export function CommandBar({
 
   return (
     <form
-      className="flex flex-1 items-center gap-3 rounded-xl border border-line-strong bg-white py-1.5 pr-1.5 pl-1.5 shadow-[0_1px_2px_rgb(29_25_21/0.05)] focus-within:border-ink-2"
+      className="flex w-full items-center gap-3 rounded-xl border border-line-strong bg-white py-1.5 pr-1.5 pl-1.5 shadow-[0_1px_2px_rgb(29_25_21/0.05)] focus-within:border-ink-2"
       onSubmit={(e) => {
         e.preventDefault();
         if (!trimmed || disabled) return;
@@ -66,10 +83,16 @@ export function CommandBar({
         aria-label="팀장 지시"
         aria-keyshortcuts="/"
         autoComplete="off"
+        maxLength={MAX_COMMAND_LENGTH}
         autoFocus
         disabled={disabled}
         className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint disabled:cursor-not-allowed"
       />
+      {nearLimit && !disabled && (
+        <span className="tabular shrink-0 text-xs text-muted" aria-live="polite">
+          {text.length}/{MAX_COMMAND_LENGTH}
+        </span>
+      )}
       {attachment && !onStop && (
         <>
           <input
@@ -86,7 +109,7 @@ export function CommandBar({
             }}
           />
           {attachment.file ? (
-            <span className="inline-flex max-w-[220px] shrink-0 items-center gap-1 rounded-md bg-[#e3eaf4] py-1 pr-1 pl-2 text-xs font-semibold text-[#2d4f7c]">
+            <span className="inline-flex max-w-[220px] shrink-0 items-center gap-1 rounded-md bg-scan-soft py-1 pr-1 pl-2 text-xs font-semibold text-scan">
               <IconPaperclip className="size-3.5" />
               <span className="truncate">{attachment.file.name}</span>
               <span className="tabular shrink-0 font-normal">{Math.max(1, Math.round(attachment.file.size / 1024))}KB</span>
@@ -112,12 +135,12 @@ export function CommandBar({
           type="button"
           onClick={onStop}
           title="진행 중인 업무를 멈춥니다. 작성 중이던 초안은 저장되지 않습니다."
-          className={`${btn.secondary} border-[#d7a39b] text-[#8f2f25] hover:border-[#8f2f25]`}
+          className={`${btn.secondary} border-danger-line text-danger hover:border-danger`}
         >
           <IconStop /> 중지
         </button>
       ) : (
-        <button type="submit" disabled={!trimmed || disabled} className={live ? btn.primary : `${btn.primary} bg-ink hover:bg-ink-2`}>
+        <button type="submit" disabled={!trimmed || disabled} className={live ? btn.primary : `${btn.primary} bg-ink enabled:hover:bg-ink-2`}>
           {live ? "실행 · Pro 차감" : "시뮬레이션 실행"}
           <IconSend />
         </button>

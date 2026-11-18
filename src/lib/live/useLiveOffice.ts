@@ -60,17 +60,19 @@ export function useLiveOffice() {
     [state.phase, run],
   );
 
-  /** 팀장의 점검(스캔) 승인·미승인 결정을 서버에 전달합니다. 결과는 진행 중인 스트림으로 돌아옵니다. */
+  /** 팀장의 점검(스캔) 승인·미승인 결정을 서버에 전달합니다. 결과는 진행 중인 스트림으로 돌아옵니다. 전달했으면 true */
   const decideScan = useCallback(
-    async (approve: boolean) => {
+    async (approve: boolean): Promise<boolean> => {
       const id = state.scanRequest?.id ?? scanIdRef.current;
-      if (!id) return;
+      if (!id) return false;
       const res = await fetch(`/api/scans/${id}/decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ approve }),
       }).catch(() => null);
-      if (!res?.ok) emit({ type: "log", from: "chief", text: "점검 결정을 전달하지 못했습니다. 업무가 이미 끝났는지 확인해 주세요." });
+      if (res?.ok) return true;
+      emit({ type: "log", from: "chief", text: "점검 결정을 전달하지 못했습니다. 다시 눌러 보고, 계속 안 되면 업무를 중지해 주세요." });
+      return false;
     },
     [state.scanRequest, emit],
   );

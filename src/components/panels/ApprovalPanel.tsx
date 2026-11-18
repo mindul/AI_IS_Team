@@ -49,7 +49,7 @@ function Evidence({ approval }: { approval: Approval }) {
       {approval.scan && (
         <div>
           <dt className="sr-only">스캔 단계</dt>
-          <dd className="font-semibold text-[#2d4f7c]">{scanOutcomeLabel(approval.scan)}</dd>
+          <dd className="font-semibold text-scan">{scanOutcomeLabel(approval.scan)}</dd>
         </div>
       )}
       <div className="tabular">
@@ -70,6 +70,7 @@ export function ApprovalPanel({
   onDecideScan,
   phase,
   saved,
+  approving,
   onApprove,
   onReject,
   onDownloadSaved,
@@ -78,10 +79,12 @@ export function ApprovalPanel({
   approval: Approval | null;
   /** 팀장 승인을 기다리는 시스템 점검 요청 */
   scanRequest: ScanRequest | null;
-  onDecideScan: (approve: boolean) => void;
+  onDecideScan: (approve: boolean) => Promise<boolean>;
   phase: OfficePhase;
   /** 방금 승인·저장된 보고서 (다음 지시 전까지 성공 상태로 보여줌) */
   saved: SavedReport | null;
+  /** 승인한 보고서를 저장하는 중 (버튼을 잠금) */
+  approving: boolean;
   onApprove: () => void;
   onReject: (comment: string) => void;
   onDownloadSaved: () => void;
@@ -132,7 +135,7 @@ export function ApprovalPanel({
       {scanRequest ? (
         <ScanApprovalCard scan={scanRequest} onDecide={onDecideScan} />
       ) : approval ? (
-        <div key={approval.id} className="anim-arrive rounded-xl border border-[#e2b99c] bg-approval p-4">
+        <div key={approval.id} className="anim-arrive rounded-xl border border-approval-line bg-approval p-4">
           {approval.scan && <ApprovalSteps current="report" scan={approval.scan} />}
           <div className="flex items-start justify-between gap-3">
             <h2 id="approval-heading" ref={headingRef} tabIndex={-1} className="text-[17px] leading-snug font-bold text-balance focus-visible:outline-none">
@@ -169,6 +172,7 @@ export function ApprovalPanel({
                 onChange={(e) => setComment(e.target.value)}
                 onKeyDown={(e) => e.key === "Escape" && closeReject()}
                 placeholder="무엇을 고칠지 적어 주세요 (예: KISA 가이드 출처 보강)"
+                maxLength={1000}
                 aria-label="반려 사유"
                 className="min-w-0 flex-1 rounded-md border border-line-strong bg-white px-3 py-2 text-sm placeholder:text-faint focus:border-ink-2 focus:outline-none"
               />
@@ -185,11 +189,11 @@ export function ApprovalPanel({
                 <IconDoc /> 보고서 읽기
               </button>
               <span className="flex-1" />
-              <button type="button" onClick={startReject} className={btn.secondary}>
+              <button type="button" onClick={startReject} disabled={approving} className={btn.secondary}>
                 반려
               </button>
-              <button type="button" onClick={approve} className={btn.primary}>
-                <IconCheck /> 보고서 승인
+              <button type="button" onClick={approve} disabled={approving} className={btn.primary}>
+                <IconCheck /> {approving ? "저장 중…" : "보고서 승인"}
               </button>
             </div>
           )}
@@ -203,19 +207,19 @@ export function ApprovalPanel({
             onClose={() => setReading(false)}
             actions={
               <>
-                <button type="button" onClick={startReject} className={btn.secondary}>
+                <button type="button" onClick={startReject} disabled={approving} className={btn.secondary}>
                   반려
                 </button>
-                <button type="button" onClick={approve} className={btn.primary}>
-                  <IconCheck /> 보고서 승인
+                <button type="button" onClick={approve} disabled={approving} className={btn.primary}>
+                  <IconCheck /> {approving ? "저장 중…" : "보고서 승인"}
                 </button>
               </>
             }
           />
         </div>
       ) : saved && phase === "idle" ? (
-        <div className="rounded-xl border border-[#adc49c] bg-[#f1f6ec] p-4">
-          <h2 id="approval-heading" className="flex items-center gap-1.5 text-sm font-bold text-[#35602a]">
+        <div className="rounded-xl border border-success-line bg-success-surface p-4">
+          <h2 id="approval-heading" className="flex items-center gap-1.5 text-sm font-bold text-success">
             <IconCheck /> 보고서를 승인하고 기록에 저장했습니다
           </h2>
           <p className="mt-1 truncate text-[15px] font-semibold">{saved.title}</p>

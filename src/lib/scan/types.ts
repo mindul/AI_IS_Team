@@ -7,6 +7,14 @@ export interface ScanTarget {
   note?: string;
 }
 
+/** config/scan-targets.json을 읽은 결과 */
+export interface TargetList {
+  targets: ScanTarget[];
+  errors: string[];
+  /** 사내 도메인 (예: "mycorp.co.kr"). 이 도메인 아래 호스트 이름은 AI에게 별칭으로만 보냅니다. */
+  internalDomains?: string[];
+}
+
 export type ScanProfileId = "quick" | "service";
 
 /** 팀장 결재가 필요한 스캔 요청 (화면에만 실제 대상이 표시됨) */

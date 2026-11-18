@@ -65,7 +65,7 @@ export function useSimulatedOffice() {
   const log = useCallback((text: string) => emit({ type: "log", from: "chief", text }), [emit]);
 
   /** 시뮬레이션에는 실제 점검이 없습니다 (화면 인터페이스만 맞춤) */
-  const decideScan = useCallback(async () => {}, []);
+  const decideScan = useCallback(async (): Promise<boolean> => true, []);
 
   return { state, start, approve, reject, stop, clearLogs, log, decideScan };
 }

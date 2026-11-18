@@ -4,9 +4,9 @@ import { IconCheck } from "../icons";
 type StepState = { text: string; tone: "now-scan" | "now-report" | "done" | "later" };
 
 const DOT: Record<StepState["tone"], string> = {
-  "now-scan": "bg-[#2d4f7c] text-white",
+  "now-scan": "bg-scan text-white",
   "now-report": "bg-accent text-white",
-  done: "bg-[#35602a] text-white",
+  done: "bg-success text-white",
   later: "border border-line-strong text-muted",
 };
 

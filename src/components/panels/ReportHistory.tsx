@@ -99,7 +99,7 @@ export function ReportHistory({
             </button>
           </header>
           <ul className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
-            {error && <li className="px-6 py-3 text-sm text-[#8f2f25]">{error}</li>}
+            {error && <li className="px-6 py-3 text-sm text-danger">{error}</li>}
             {reports.length === 0 && !error && (
               <li className="px-6 py-12 text-center text-sm text-muted">
                 아직 승인한 보고서가 없습니다.
@@ -116,7 +116,7 @@ export function ReportHistory({
                     )}
                     <span className="truncate text-[15px] font-semibold">{r.title}</span>
                     {r.scan && (
-                      <span className="shrink-0 rounded bg-[#e3eaf4] px-1.5 py-px text-[11px] font-bold text-[#2d4f7c]">
+                      <span className="shrink-0 rounded bg-scan-soft px-1.5 py-px text-[11px] font-bold text-scan">
                         {r.scan.decision === "approved" ? "스캔 승인" : r.scan.decision === "rejected" ? "스캔 거절" : "스캔 결과 첨부"}
                       </span>
                     )}
@@ -143,7 +143,7 @@ export function ReportHistory({
           actions={
             confirmDelete ? (
               <>
-                <span className="text-[13px] font-semibold text-[#8f2f25]">삭제하면 되돌릴 수 없습니다</span>
+                <span className="text-[13px] font-semibold text-danger">삭제하면 되돌릴 수 없습니다</span>
                 <button type="button" onClick={() => setConfirmDelete(false)} className={btn.ghost}>
                   취소
                 </button>

@@ -9,7 +9,7 @@ import { Masker, aliasAppendix, resultToMarkdown } from "../scan/mask";
 import { parseNmapXml, summarize } from "../scan/parse";
 import { PROFILES } from "../scan/profiles";
 import { loadTargets, runNmap } from "../scan/runner";
-import type { ScanOutcome, ScanProfileId, ScanRequest, ScanTarget } from "../scan/types";
+import type { ScanOutcome, ScanProfileId, ScanRequest, ScanTarget, TargetList } from "../scan/types";
 import type { Backend, Effort } from "./backend";
 import { MISSION_COST_CAP_KRW, MODEL_BY_TIER, SEARCH_LIMIT } from "./config";
 import { AgentRefusalError, CostCapError, UserFacingError } from "./errors";
@@ -30,7 +30,7 @@ const WRITERS = ["vuln", "incident", "compliance", "awareness"] as const;
 
 /** 점검(스캔)에 필요한 바깥 기능. 테스트에서는 가짜로 바꿔 끼웁니다. */
 export interface ScanDeps {
-  loadTargets: () => Promise<{ targets: ScanTarget[]; errors: string[] }>;
+  loadTargets: () => Promise<TargetList>;
   runNmap: (profile: ScanProfileId, targets: ScanTarget[], signal: AbortSignal) => Promise<string>;
   waitForDecision: (scanId: string, signal: AbortSignal) => Promise<boolean>;
   audit: (entry: Record<string, unknown>) => Promise<void>;
@@ -264,9 +264,9 @@ export async function runMission(
   emit({ type: "mission_started", missionId, command: rawCommand });
 
   // 등록된 점검 대상·IP는 AI에게 별칭으로만 전달합니다.
-  const { targets, errors } = await deps.loadTargets();
+  const { targets, errors, internalDomains } = await deps.loadTargets();
   if (errors.length) emit({ type: "log", from: "chief", text: `점검 허용 목록 오류 (해당 항목 제외): ${errors.join(" / ")}` });
-  const masker = new Masker(targets);
+  const masker = new Masker(targets, internalDomains);
   const command = masker.maskText(rawCommand);
 
   // 1. 비서실장: 업무 계획
@@ -381,7 +381,8 @@ export async function runRevision(
   scanDeps: Pick<ScanDeps, "loadTargets"> = defaultScanDeps,
 ): Promise<void> {
   const ctx = new MissionContext(backend, emit, signal);
-  const masker = new Masker((await scanDeps.loadTargets()).targets);
+  const list = await scanDeps.loadTargets();
+  const masker = new Masker(list.targets, list.internalDomains);
   const note = masker.maskText(input.comment.trim() || "전반적으로 보완해 주세요");
 
   emit({ type: "agent_status", agentId: "chief", status: "working" });

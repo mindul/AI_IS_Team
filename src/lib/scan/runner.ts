@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { buildNmapArgs } from "./profiles";
 import { parseTargets } from "./targets";
-import type { ScanProfileId, ScanTarget } from "./types";
+import type { ScanProfileId, ScanTarget, TargetList } from "./types";
 
 const NMAP = process.env.NMAP_PATH || "nmap";
 const SCAN_TIMEOUT_MS = 20 * 60_000;
@@ -15,7 +15,7 @@ export function targetsFile(): string {
 }
 
 /** 허용 목록 읽기. 파일이 없으면 빈 목록(스캔 불가)입니다. */
-export async function loadTargets(): Promise<{ targets: ScanTarget[]; errors: string[] }> {
+export async function loadTargets(): Promise<TargetList> {
   try {
     return parseTargets(JSON.parse(await readFile(targetsFile(), "utf8")));
   } catch (err) {

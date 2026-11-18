@@ -17,9 +17,27 @@
   --color-accent: #a8522a;
   --color-accent-text: #9a4a1f;
   --color-accent-soft: #f6e4d6;
+  --color-accent-hover: #93461f;
+  --color-accent-strong: #8a4119; /* 연한 강조 배경 위 글자 */
+  --color-accent-line: #d9a98a;
   --color-approval: #fdf6ef;
+  --color-approval-line: #e2b99c;
   --color-focus: #2d5d8c;
-  --font-sans: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  /* 상태 색: 스캔 승인(파랑) · 위험(빨강) · 완료(초록). 각각 글자/채움 · 연한 배경 · 테두리 · 카드 바탕 */
+  --color-scan: #2d4f7c;
+  --color-scan-hover: #244066;
+  --color-scan-soft: #e3eaf4;
+  --color-scan-line: #a9bcd6;
+  --color-scan-surface: #f3f6fa;
+  --color-danger: #8f2f25;
+  --color-danger-hover: #7a271f;
+  --color-danger-soft: #f6dfdb;
+  --color-danger-line: #d7a39b;
+  --color-success: #35602a;
+  --color-success-soft: #e3eedb;
+  --color-success-line: #adc49c;
+  --color-success-surface: #f1f6ec;
+  --font-sans: var(--font-pretendard), "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
   --font-mono: "SF Mono", "D2Coding", ui-monospace, monospace;
 }
 

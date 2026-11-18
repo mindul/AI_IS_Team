@@ -12,6 +12,7 @@ export PATH="$HOME/.local/bin:$PATH:/opt/homebrew/bin:/usr/local/bin"
 cd "${0:A:h}" || exit 1
 
 PORT="${PORT:-3000}"
+# 서버는 localhost(127.0.0.1)에만 열립니다 (package.json의 dev/start 스크립트). 사내망의 다른 PC는 접속할 수 없습니다.
 URL="http://localhost:$PORT"
 
 if ! command -v npm >/dev/null 2>&1; then
@@ -33,6 +34,12 @@ if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
   exit 0
 fi
 
+# 기본은 빌드한 뒤 실행(빠르고 안정적). 코드를 고치는 중이면 DEV=1 ./launch.command 로 개발 모드 실행.
+if [[ "$DEV" != "1" ]]; then
+  echo "🔨 앱을 빌드하는 중 (npm run build)..."
+  npm run build || { read -k 1 "?빌드 실패. 아무 키나 누르면 닫습니다..."; exit 1; }
+fi
+
 echo "🚀 AI Office 서버를 시작합니다: $URL"
 echo "   (종료: Ctrl+C)"
 
@@ -44,4 +51,8 @@ echo "   (종료: Ctrl+C)"
   done
 ) &
 
-npm run dev -- --port "$PORT"
+if [[ "$DEV" == "1" ]]; then
+  npm run dev -- --port "$PORT"
+else
+  npm run start -- --port "$PORT"
+fi

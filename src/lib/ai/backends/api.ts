@@ -67,7 +67,13 @@ export const apiBackend: Backend = {
     }
 
     text = text.trim();
-    return { text, structured: req.jsonSchema ? JSON.parse(text) : undefined };
+    if (!req.jsonSchema) return { text };
+    try {
+      return { text, structured: JSON.parse(text) };
+    } catch {
+      // 분량 제한으로 잘렸거나 형식이 깨진 경우: 날것의 SyntaxError 대신 알아볼 수 있는 메시지로
+      throw new UserFacingError("AI 응답이 정해진 형식(JSON)이 아니어서 읽지 못했습니다. 다시 시도해 주세요");
+    }
   },
 };
 

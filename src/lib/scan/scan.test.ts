@@ -97,4 +97,25 @@ describe("별칭 처리 (AI로 실제 IP를 보내지 않음)", () => {
     expect(appendix).toContain("| 테스트망 #1 | 10.10.0.7 |");
     expect(appendix).toContain("| 웹서버 | 10.10.9.9 |");
   });
+
+  it("등록 대상은 대소문자를 가리지 않고, 더 긴 주소 일부는 바꾸지 않는다", () => {
+    const masker = new Masker([{ name: "그룹웨어", target: "gw.corp.local" }, ...targets]);
+    expect(masker.maskText("GW.Corp.Local 점검")).toBe("그룹웨어 점검");
+    expect(masker.maskText("10.10.9.99")).toBe("호스트 #1");
+  });
+
+  it("IPv6 주소를 가리고, 시각(10:30:00)은 그대로 둔다", () => {
+    const masker = new Masker(targets);
+    expect(masker.maskText("fe80::1 과 2001:db8:0:0:0:0:0:7 를 10:30:00에 점검")).toBe("호스트 #1 과 호스트 #2 를 10:30:00에 점검");
+  });
+
+  it("내부 도메인 호스트 이름을 가린다 (기본 끝말 + 설정한 사내 도메인)", () => {
+    const masker = new Masker(targets, ["mycorp.co.kr"]);
+    expect(masker.maskText("db01.corp.local, erp.mycorp.co.kr, www.kisa.or.kr 확인")).toBe("호스트 #1, 호스트 #2, www.kisa.or.kr 확인");
+    expect(aliasAppendix(masker)).toContain("| 호스트 #2 | erp.mycorp.co.kr |");
+  });
+
+  it("허용 목록 JSON에서 사내 도메인을 읽는다", () => {
+    expect(parseTargets({ targets: [], internalDomains: ["mycorp.co.kr", 3, "bad domain"] }).internalDomains).toEqual(["mycorp.co.kr"]);
+  });
 });

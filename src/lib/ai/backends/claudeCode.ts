@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 import type { Backend, RunHooks, RunRequest, RunResult } from "../backend";
+import { AGENT_BY_ID } from "../../office/roster";
 import { AgentRefusalError, UserFacingError } from "../errors";
 import { parseStreamLine } from "./claudeCodeStream";
 
@@ -51,6 +52,15 @@ function buildArgs(req: RunRequest): string[] {
 
 function userPrompt(req: RunRequest): string {
   return req.searchLimit ? `${req.user}\n\n(웹 검색은 최대 ${req.searchLimit}회까지만 사용하세요.)` : req.user;
+}
+
+/**
+ * 구독 사용 한도 초과인지. "limit"만 들어가도 한도로 보던 것을, 한도를 뜻하는 표현일 때만 보도록 좁혔습니다.
+ * (예: "max_tokens limit", "context limit" 같은 다른 오류를 한도 초과로 잘못 안내하지 않게)
+ */
+export function isQuotaError(status: number | null | undefined, text: string): boolean {
+  if (status === 429) return true;
+  return /usage limit|rate limit|limit reached|hit your limit|quota/i.test(text);
 }
 
 /** Claude Pro/Max 구독으로 로그인된 Claude Code CLI를 호출합니다. API 요금이 발생하지 않습니다. */
@@ -102,10 +112,10 @@ export const claudeCodeBackend: Backend = {
           hooks.onUsage({ tokens: item.tokens, costKrw: 0 });
           if (item.refused) failure = new AgentRefusalError(req.agentId, "안전 정책");
           else if (item.ok) result = { text: item.text.trim(), structured: item.structured };
-          else if (item.errorStatus === 429 || /limit/i.test(item.text))
+          else if (isQuotaError(item.errorStatus, item.text))
             failure = new UserFacingError("Claude 구독 사용 한도에 도달했습니다. 한도가 초기화된 뒤 다시 시도해 주세요");
           else if (item.subtype === "error_max_turns")
-            failure = new UserFacingError(`${req.agentId} 작업이 허용된 단계 수를 넘겨 중단되었습니다`);
+            failure = new UserFacingError(`${AGENT_BY_ID[req.agentId].name}의 작업이 허용된 단계 수를 넘겨 중단되었습니다`);
           else failure = new UserFacingError(`Claude Code 오류: ${item.text || item.subtype || "알 수 없음"}`);
         }
       });

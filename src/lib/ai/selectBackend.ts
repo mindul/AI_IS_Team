@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Backend } from "./backend";
+import type { BackendStatus } from "./status";
 import { apiBackend } from "./backends/api";
 import { claudeCodeBackend, subscriptionStatus } from "./backends/claudeCode";
 
@@ -15,14 +16,7 @@ export function getBackend(): Backend {
   return backendKind() === "api" ? apiBackend : claudeCodeBackend;
 }
 
-export interface BackendStatus {
-  live: boolean;
-  kind: BackendKind;
-  /** 구독 요금제 이름 (pro, max …) */
-  plan?: string;
-  /** 사용할 수 없을 때 안내 문구 */
-  hint?: string;
-}
+export type { BackendStatus };
 
 export async function backendStatus(): Promise<BackendStatus> {
   if (backendKind() === "api") {

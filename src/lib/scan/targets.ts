@@ -1,4 +1,4 @@
-import type { ScanTarget } from "./types";
+import type { ScanTarget, TargetList } from "./types";
 
 const OCTET = "(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)";
 const IPV4 = new RegExp(`^${OCTET}(\\.${OCTET}){3}$`);
@@ -29,7 +29,7 @@ export function validateTarget(target: string): string | null {
 }
 
 /** 허용 목록 JSON을 검증해 올바른 항목과 오류 목록을 돌려줍니다. */
-export function parseTargets(json: unknown): { targets: ScanTarget[]; errors: string[] } {
+export function parseTargets(json: unknown): TargetList {
   const errors: string[] = [];
   const list = (json as { targets?: unknown })?.targets;
   if (!Array.isArray(list)) return { targets: [], errors: ['"targets" 배열이 없습니다'] };
@@ -48,7 +48,11 @@ export function parseTargets(json: unknown): { targets: ScanTarget[]; errors: st
     names.add(name);
     targets.push({ name, target, ...(typeof e.note === "string" && e.note.trim() ? { note: e.note.trim() } : {}) });
   });
-  return { targets, errors };
+  const domains = (json as { internalDomains?: unknown }).internalDomains;
+  const internalDomains = Array.isArray(domains)
+    ? domains.filter((d): d is string => typeof d === "string" && HOSTNAME.test(d.trim().replace(/^\./, ""))).map((d) => d.trim())
+    : [];
+  return { targets, errors, ...(internalDomains.length ? { internalDomains } : {}) };
 }
 
 const toInt = (ip: string) => ip.split(".").reduce((n, o) => (n << 8) + Number(o), 0) >>> 0;

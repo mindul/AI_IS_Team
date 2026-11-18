@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AGENT_BY_ID, AGENTS, LEAD_LABEL, TIER_LABEL } from "@/lib/office/roster";
+import { AGENT_BY_ID, AGENTS, LEAD_LABEL, STATUS_LABEL, TIER_LABEL } from "@/lib/office/roster";
 import type { AgentId, AgentProfile, AgentStatus, Handoff, OfficePhase } from "@/lib/office/types";
 import { AgentMark } from "../AgentMark";
 import { IconClose } from "../icons";
@@ -33,7 +33,7 @@ function Desk({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      aria-label={`${agent.name}, ${status === "idle" ? "대기" : status} — 담당 업무 보기`}
+      aria-label={`${agent.name}, ${STATUS_LABEL[status]} — 담당 업무 보기`}
       className={`absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 rounded-xl px-2 pt-1 pb-2 transition-colors ${
         selected ? "bg-white shadow-[0_6px_20px_-10px_rgb(29_25_21/0.35)] ring-2 ring-ink/80" : "hover:bg-white/70"
       }`}
@@ -157,7 +157,7 @@ export function OfficeFloor({
             phase === "awaiting_approval"
               ? "border-accent bg-accent text-white"
               : phase === "awaiting_scan"
-                ? "border-[#2d4f7c] bg-[#2d4f7c] text-white"
+                ? "border-scan bg-scan text-white"
                 : "border-line-strong bg-white text-ink-2"
           }`}
         >

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isQuotaError } from "./claudeCode";
 import { parseStreamLine } from "./claudeCodeStream";
 
 // 실제 `claude -p --output-format stream-json` 출력에서 필요한 필드만 남긴 예시
@@ -65,5 +66,14 @@ describe("parseStreamLine", () => {
   it("JSON이 아닌 줄이나 관심 없는 이벤트는 무시한다", () => {
     expect(parseStreamLine("not json")).toEqual({ kind: "other" });
     expect(parseStreamLine(JSON.stringify({ type: "system", subtype: "init" }))).toEqual({ kind: "other" });
+  });
+});
+
+describe("isQuotaError", () => {
+  it("429나 한도 표현일 때만 구독 한도로 본다", () => {
+    expect(isQuotaError(429, "")).toBe(true);
+    expect(isQuotaError(null, "Claude usage limit reached")).toBe(true);
+    expect(isQuotaError(null, "max_tokens limit exceeded for output")).toBe(false);
+    expect(isQuotaError(null, "context length limit")).toBe(false);
   });
 });
