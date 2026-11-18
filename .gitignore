@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# playwright 스크린샷
+.playwright-mcp/
+
+# 승인된 보고서 (이 PC에만 보관)
+/data/
+
+# impeccable 디자인 검토 기록
+/.impeccable/
+
+# 점검 허용 대상 (사내 IP 포함, git 제외)
+/config/scan-targets.json
